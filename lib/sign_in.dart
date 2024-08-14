@@ -1,4 +1,4 @@
-import 'package:patrol_app/dashboard.dart';
+import 'package:patrol_app/main_page.dart';
 import 'package:patrol_app/sign_up.dart';
 import 'package:flutter/material.dart';
 
@@ -73,7 +73,7 @@ class SignInScreen extends StatelessWidget {
                 // Handle sign in action
                 Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => DashboardScreen(),
+                        builder: (_) => MainPage(),
                       ),
                     );
               },
