@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:patrol_app/dashboard.dart';
-// import 'package:patrol_app/map_screen.dart';
+import 'package:patrol_app/map_screen.dart';
 import 'package:patrol_app/task_screen.dart';
 import 'categories_screen.dart'; // Import the CategoriesScreen
 
@@ -15,7 +15,7 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _screens = [
     DashboardScreen(),  // DashBoard Screen
     TaskScreen(), // Clear Screen
-    Center(child: Text('Profile Screen')),
+    MapScreen(),
     CategoriesScreen(),                  // Categories Screen
     Center(child: Text('Profile Screen')) // Profile Screen
   ];
