@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:patrol_app/dashboard.dart';
-import 'package:patrol_app/map_screen.dart';
+// import 'package:patrol_app/map_screen.txt';
 import 'package:patrol_app/task_screen.dart';
-import 'categories_screen.dart'; // Import the CategoriesScreen
+import 'report_screen.dart'; // Import the CategoriesScreen
 
 class MainPage extends StatefulWidget {
   @override
@@ -15,8 +15,8 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _screens = [
     DashboardScreen(),  // DashBoard Screen
     TaskScreen(), // Clear Screen
-    MapScreen(),
-    CategoriesScreen(),                  // Categories Screen
+    Center(child: Text('Map Screen')),
+    ReportScreen(),                  // Categories Screen
     Center(child: Text('Profile Screen')) // Profile Screen
   ];
 
