@@ -3,6 +3,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:geolocator/geolocator.dart';
 
 class FireReportScreen extends StatefulWidget {
   @override
@@ -10,8 +11,8 @@ class FireReportScreen extends StatefulWidget {
 }
 
 class _FireReportScreenState extends State<FireReportScreen> {
-  String currentLatitude = '12.65656';
-  String currentLongitude = '67.97575';
+  String currentLatitude = '--';
+  String currentLongitude = '--';
   List<File> _images = [];
   final picker = ImagePicker();
   bool _isSubmitting = false;
@@ -34,14 +35,86 @@ class _FireReportScreenState extends State<FireReportScreen> {
     });
   }
 
+  Future<int> _getNextReportIndex() async {
+    DatabaseReference fireReportsRef = FirebaseDatabase.instance.ref().child('Reports/Fire');
+    DatabaseEvent event = await fireReportsRef.once();
+
+    if (event.snapshot.exists) {
+      dynamic value = event.snapshot.value;
+      List<int> keys = [];
+
+      if (value is List) {
+        for (int i = 0; i < value.length; i++) {
+          if (value[i] != null) {
+            keys.add(i);
+          }
+        }
+      } else if (value is Map) {
+        keys = value.keys.map((key) => int.tryParse(key.toString()) ?? 0).toList();
+      }
+
+      if (keys.isNotEmpty) {
+        keys.sort();
+        return keys.last + 1;
+      }
+    }
+
+    return 1; // Start with index 1 if no reports exist or if there's an error
+  }
+
+  Future<void> _getCurrentLocation() async {
+    final hasPermission = await _handleLocationPermission();
+    if (!hasPermission) return;
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        currentLatitude = position.latitude.toString();
+        currentLongitude = position.longitude.toString();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<bool> _handleLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Location services are disabled. Please enable the services')));
+      return false;
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permissions are denied')));
+        return false;
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Location permissions are permanently denied, we cannot request permissions.')));
+      return false;
+    }
+    return true;
+  }
+
   Future<void> submitReport() async {
     setState(() {
       _isSubmitting = true;
     });
 
+    int reportID = await _getNextReportIndex();
+
     DatabaseReference fireReportsRef = FirebaseDatabase.instance.ref().child('Reports/Fire');
-    DatabaseReference newReportRef = fireReportsRef.push();
-    String reportID = newReportRef.key!;
 
     List<String> downloadURLs = [];
 
@@ -58,7 +131,8 @@ class _FireReportScreenState extends State<FireReportScreen> {
       downloadURLs.add(downloadURL);
     }
 
-    await newReportRef.set({
+    Map<String, dynamic> reportData = {
+      'reportID': reportID,
       'location': {
         'Lat': currentLatitude,
         'Long': currentLongitude,
@@ -72,7 +146,9 @@ class _FireReportScreenState extends State<FireReportScreen> {
       'reported_by': 'Officer A', // Replace with dynamic data as needed
       'day': DateTime.now().toIso8601String().split('T').first,
       'time': DateTime.now().toIso8601String().split('T').last.split('.').first,
-    });
+    };
+
+    await fireReportsRef.child(reportID.toString()).set(reportData);
 
     setState(() {
       _isSubmitting = false;
@@ -118,34 +194,38 @@ class _FireReportScreenState extends State<FireReportScreen> {
             ),
             SizedBox(height: 16),
             // GPS Coordinates Display
-            TextField(
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: 'Current Latitude',
-                hintText: currentLatitude,
-              ),
-            ),
-            SizedBox(height: 8),
-            TextField(
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: 'Current Longitude',
-                hintText: currentLongitude,
-              ),
-            ),
+            // GPS Coordinates Display
+Row(
+  children: [
+    Text(
+      'Latitude: ',
+      style: TextStyle(fontWeight: FontWeight.bold),
+    ),
+    Text(
+      currentLatitude,
+    ),
+  ],
+),
+SizedBox(height: 8),
+Row(
+  children: [
+    Text(
+      'Longitude: ',
+      style: TextStyle(fontWeight: FontWeight.bold),
+    ),
+    Text(
+      currentLongitude,
+    ),
+  ],
+),
+
             SizedBox(height: 16),
             Text('Location Options', style: Theme.of(context).textTheme.titleMedium),
             SizedBox(height: 8),
             Row(
               children: [
                 ElevatedButton(
-                  onPressed: () {
-                    // Implement 'Use my current location' functionality here
-                    setState(() {
-                      currentLatitude = '1.45568';
-                      currentLongitude = '1.45568';
-                    });
-                  },
+                  onPressed: _getCurrentLocation,
                   child: Text('Use my current location'),
                 ),
                 SizedBox(width: 16),
@@ -233,31 +313,59 @@ class _FireReportScreenState extends State<FireReportScreen> {
             ),
             SizedBox(height: 16),
             // Pictures and Take Picture Button
-            Row(
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  color: Colors.grey[300],
-                  child: _images.isNotEmpty
-                      ? GestureDetector(
-                          onTap: () => viewImage(_images.last),
-                          child: Image.file(
-                            _images.last,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Center(
-                          child: Text('No Image'),
-                        ),
-                ),
-                SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: getImage,
-                  child: Text(_images.isEmpty ? 'Take a Picture' : 'Take Another'),
-                ),
-              ],
+            // Pictures and Take Picture Button
+Wrap(
+  spacing: 8.0,
+  runSpacing: 8.0,
+  children: _images.map((image) {
+    return Stack(
+      children: [
+        Container(
+          width: 100,
+          height: 100,
+          child: GestureDetector(
+            onTap: () => viewImage(image),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                image,
+                fit: BoxFit.cover,
+              ),
             ),
+          ),
+        ),
+        Positioned(
+          right: 0,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _images.remove(image);
+              });
+            },
+            child: Container(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }).toList(),
+),
+SizedBox(height: 16),
+ElevatedButton(
+  onPressed: getImage,
+  child: Text(_images.isEmpty ? 'Take a Picture' : 'Take Another'),
+),
+
             SizedBox(height: 16),
             // Notes
             TextField(
