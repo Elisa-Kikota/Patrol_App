@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "29693013811",
+    "firebase_url": "https://animal-tracking-01-default-rtdb.firebaseio.com",
+    "project_id": "animal-tracking-01",
+    "storage_bucket": "animal-tracking-01.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:29693013811:android:de7867eb27aa8b48ba5846",
+        "android_client_info": {
+          "package_name": "com.example.patrol_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7LVwn6f3_logqpsAo-49RZrzKIP4g8Go"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
