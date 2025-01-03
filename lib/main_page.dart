@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:patrol_app/dashboard.dart';
+import 'package:patrol_app/profile_screen.dart';
 // import 'package:patrol_app/map_screen.txt';
 import 'package:patrol_app/task_screen.dart';
 import 'report_screen.dart'; // Import the CategoriesScreen
@@ -17,7 +18,7 @@ class _MainPageState extends State<MainPage> {
     TaskScreen(), // Clear Screen
     Center(child: Text('Map Screen')),
     ReportScreen(),                  // Categories Screen
-    Center(child: Text('Profile Screen')) // Profile Screen
+    ProfileScreen() // Profile Screen
   ];
 
   void _onItemTapped(int index) {

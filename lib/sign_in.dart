@@ -1,29 +1,64 @@
-import 'package:patrol_app/main_page.dart';
-import 'package:patrol_app/sign_up.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'main_page.dart';
+import 'sign_up.dart';
 
-class SignInScreen extends StatelessWidget {
+class SignInScreen extends StatefulWidget {
+  @override
+  _SignInScreenState createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends State<SignInScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _signIn() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => MainPage(),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Sign-in failed')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Define a fixed width for the social buttons
-    final double buttonWidth = MediaQuery.of(context).size.width * 0.8;
-
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Add Logo at the top
+            // Logo
             Image.asset(
-              'assets/images/logos/animal_tracking.png', // Replace with your logo path
+              'assets/images/logos/animal_tracking.png',
               height: 100,
             ),
             SizedBox(height: 30),
 
-            // "Welcome Back" text
+            // Sign In Text
             Text(
-              'Welcome Back',
+              'Sign In',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -32,23 +67,13 @@ class SignInScreen extends StatelessWidget {
             ),
             SizedBox(height: 10),
 
-            // "Fill in the information..."
-            Text(
-              'Fill in the information below in order to access your account',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 30),
-
             // Email Text Field
             TextField(
+              controller: _emailController,
               decoration: InputDecoration(
                 labelText: 'Email',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25.0), // Adjust the radius as needed
+                  borderRadius: BorderRadius.circular(25.0),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -57,10 +82,11 @@ class SignInScreen extends StatelessWidget {
 
             // Password Text Field
             TextField(
+              controller: _passwordController,
               decoration: InputDecoration(
                 labelText: 'Password',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25.0), // Adjust the radius as needed
+                  borderRadius: BorderRadius.circular(25.0),
                 ),
               ),
               obscureText: true,
@@ -69,77 +95,14 @@ class SignInScreen extends StatelessWidget {
 
             // Sign In Button
             ElevatedButton(
-              onPressed: () {
-                // Handle sign in action
-                Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => MainPage(),
-                      ),
-                    );
-              },
+              onPressed: _isLoading ? null : _signIn,
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
               ),
-              child: Text('Sign in'),
+              child: _isLoading
+                  ? CircularProgressIndicator()
+                  : Text('Sign In'),
             ),
-            SizedBox(height: 20),
-
-            // "Or" with lines
-            Row(
-              children: [
-                Expanded(child: Divider(thickness: 1)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text('or'),
-                ),
-                Expanded(child: Divider(thickness: 1)),
-              ],
-            ),
-            SizedBox(height: 20),
-
-            // Social Buttons with fixed width
-            SizedBox(
-              width: buttonWidth,
-              child: _buildSocialButton(
-                icon: Image.asset(
-                  'assets/images/logos/facebook-white.png', // Your local image path
-                  height: 24, // Adjust size as needed
-                  width: 24,
-                ),
-                text: 'Continue with Facebook',
-                color: Colors.blue,
-                onPressed: () {},
-              ),
-            ),
-            SizedBox(height: 10),
-            SizedBox(
-              width: buttonWidth,
-              child: _buildSocialButton(
-                icon: Image.asset(
-                  'assets/images/logos/google.png', // Your local image path
-                  height: 24, // Adjust size as needed
-                  width: 24,
-                ),
-                text: 'Continue with Google',
-                color: Colors.red,
-                onPressed: () {},
-              ),
-            ),
-            SizedBox(height: 10),
-            SizedBox(
-              width: buttonWidth,
-              child: _buildSocialButton(
-                icon: Image.asset(
-                  'assets/images/logos/apple-white.png', // Your local image path
-                  height: 24,
-                  width: 24,
-                ),
-                text: 'Continue with Apple',
-                color: const Color.fromARGB(255, 0, 0, 0),
-                onPressed: () {},
-              ),
-            ),
-
             SizedBox(height: 20),
 
             // "Don't have an account? Sign Up Here"
@@ -149,7 +112,6 @@ class SignInScreen extends StatelessWidget {
                 Text("Don't have an account? "),
                 GestureDetector(
                   onTap: () {
-                    // Navigate to Sign Up Page
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => SignUpScreen(),
@@ -169,25 +131,6 @@ class SignInScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  // Social button widget
-  Widget _buildSocialButton({
-    required Widget icon,
-    required String text,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      icon: icon,
-      label: Text(text),
-      style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: color,
-        padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0),
-      ),
-      onPressed: onPressed,
     );
   }
 }
